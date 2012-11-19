@@ -1,0 +1,9 @@
+(part_a (P124) ("John is up") (NOT (P)) (AND (P)(Q)) (OR (P)(Q)) (IMPLIES (P)(Q)) (EQUIV (P)(Q)) (EQUIV (IMPLIES (P) (AND (P)(Q))) (NOT (OR (P) (IMPLIES (P)(Q))))) (|p|) (8up) (|not| (P)) (AND (|p|)(Q)) ((P) OR (Q)))
+
+(part_b
+
+(tests (NOT (P)) (AND (P)(Q)) (OR (P)(Q)) (IMPLIES (P)(Q)) (EQUIV (P)(Q)) (EQUIV (IMPLIES (P1) (AND (P2) (Q3))) (NOT (OR (P4) (IMPLIES (P5)(Q6))))) (IMPLIES (P)(P)) (EQUIV (IMPLIES (P)(Q)) (OR (NOT (P))(Q))) (EQUIV (NOT (AND (P)(Q))) (OR (NOT (P))(NOT (Q)))) (IMPLIES (P) (IMPLIES (Q)(P))) (OR (P) (NOT (P))))
+
+(valuation (P nil)(Q nil) (P1 t) (P2 nil) (Q3 t) (P4 nil) (P5 t) (Q6 nil)))
+
+(part_c (NOT (P |x| |y| |z|)) (P (|f| |b| |y|) |y|) (IMPLIES (Q |u| (|f| |a| |v|) |d|) (R (|g| (|h| |b| |c| |w|)) |y|)) (ALL |x| (IMPLIES (A |x| |c|) (B |x| |d|))) (ALL |x| (EXISTS |y| (IMPLIES (A |y|) (B |x|)))) (AND (ALL |x| (P |x|)) (Q |y| |z|)) (EQUIV (B |f| |u| |a|) (P ())) (P |x| |a| Q) (ALL |x| |y| (P |x| |y|)) (ALL |x| (IMPLIES (A |y| |c|) (B |x| |d|))) (ALL |z| (EXISTS |y| (IMPLIES (A |y|) (B |x|)))))
