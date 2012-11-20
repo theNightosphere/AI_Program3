@@ -1,9 +1,6 @@
 #!/usr/bin/python
-import prog3v2
-
+import prog3
 import sys
-
-'(Move (Param (|x|)(|y|)(|z|))(Precon (AND (P |y|)(NOT (P |z|)))(AddList (P |z|))(DelList (P |y|)))'
 
 def parse_input(input_s, output_file = None):
     '''Takes a file of lisp readable input and tests that output using
@@ -19,7 +16,7 @@ the default None value)
     returns:
     Nothing'''
 
-    tests = prog3v2.get_exps(input_s)
+    tests = prog3.get_exps(input_s)
     for exp in tests:
         if(exp[1:7] == 'part_a'):
             test_a(exp, output_file)
@@ -27,9 +24,6 @@ the default None value)
             test_b(exp, output_file)
         elif exp[1:7] == 'part_c':
             test_c(exp, output_file)
-
-
-
 
 def test_a(string_a, output_file):
     '''Performs the tests for part a based on the Lisp-readable input given for part a. Determines whether the given propositions are well-formed and prints out the answer.
@@ -41,9 +35,9 @@ output is printed to the console
 
     Returns:
     Nothing.'''
-    expressions_a = prog3v2.get_exps(string_a[1:-1])
+    expressions_a = prog3.get_exps(string_a[1:-1])
     for prop in expressions_a:
-        is_wf = prog3v2.wfp_checker(prop)
+        is_wf = prog3.wfp_checker(prop)
         if output_file is None:
             print('(part_a {} {})'.format(prop, is_wf))
         else:
@@ -64,23 +58,23 @@ If no file was specified, this value is simply None.
     Returns:
     Nothing'''
     #Get the expressions and values, then get the individual expressions to be evaluated by parsing the result of the first call to get_exps once more.
-    exps_and_vals = prog3v2.get_exps(string_b[1:-1])
+    exps_and_vals = prog3.get_exps(string_b[1:-1])
     test_exps = exps_and_vals[0]
     truth_values = exps_and_vals[1]
-    expressions_b = prog3v2.get_exps(test_exps[1:-1])
+    expressions_b = prog3.get_exps(test_exps[1:-1])
     if output_file is None:
         print('\n')
     else:
         output_file.write('\n')
     for prop in expressions_b:
-        result = prog3v2.TruthValue(truth_values,prop)
+        result = prog3.TruthValue(truth_values,prop)
         if output_file is None:
             print('(part_b {} {})'.format(prop, result))
-            is_tautology = prog3v2.IsTautology(prop)
+            is_tautology = prog3.IsTautology(prop)
             print('(IsTautology {} {})'.format(prop,is_tautology))
         else:
             output_file.write('(part_b {} {})\n'.format(prop, result))
-            is_tautology = prog3v2.IsTautology(prop)
+            is_tautology = prog3.IsTautology(prop)
             output_file.write('(IsTautology {} {})\n'.format(prop,is_tautology))
 
 
@@ -99,13 +93,13 @@ If no file was specified, this value is simply None.
     Returns:
     Nothing'''
 
-    expressions_c = prog3v2.get_exps(string_c[1:-1])
+    expressions_c = prog3.get_exps(string_c[1:-1])
     if output_file is None:
         print('\n')
     else:
         output_file.write('\n')
     for prop in expressions_c:
-        is_wf = prog3v2.wfp_checkerFOL(prop)
+        is_wf = prog3.wfp_checkerFOL(prop)
         if output_file is None:
             print('(part_c {} {})'.format(prop, is_wf))
         else:

@@ -1,9 +1,9 @@
+#!/usr/bin/python
 import re
 from collections import deque
 import string
 
 operator_dictionary = {}
-t1 = '(Move (Param (|x|)(|y|)(|z|))(Precon (AND (P |y|)(NOT (P |z|))))(AddList (P |z|))(DelList (P |y|)))'
 
 class PToken:
     '''Token class used to represent each meaningful set of characters when a string is broken up into parts that must be parsed.'''
@@ -22,14 +22,120 @@ class LexNode:
         self.parent = parent
         self.children = []
 
+    def __str__(self):
+        return "Non Terminal: %s\nValue: %s\n" % (self.non_term,self.val)
+
+
+    def construct_text_from_nodes(self):
+        '''Returns a string constructed by taking a preorder walk of the tree
+and concatenating the values at each node. 
+
+    Keyword Arguments:
+    None
+
+    Returns:
+    A list of characters representating of the lex_tree starting at the node which originally called construct_text_from_nodes. Should be called with join()'''
+        my_val = []
+        if self.non_term != 'start':
+            my_val = [self.val]
+
+        for child in self.children:
+            my_val += child.construct_text_from_nodes()
+        return my_val
+        
+    def get_var_terms(self):
+        '''A function which performs a preorder walk of the LexNode tree and returns the FOL constants, variables, and functions in the order they are found.
+
+    Keyword Arguments:
+    None
+
+    Returns:
+    A list of strings which are the values of the FOL constants, variables, and functions found in the tree.'''
+
+        my_value = []
+        if self.non_term in ['const','function','variable']:
+            my_value = ['(' + self.val + ')']
+        for child in self.children:
+            my_value += child.get_var_terms()
+
+        return my_value
+
 class StripsOp:
     '''Node representing a STRIPS operator which contains its label, its parameters, its preconditions, add list, and delete list'''
+
     def __init__(self, label, parameters, list_of_changes):
         self.label = label
         self.parameters = parameters
-        self.Preconditions = list_of_changes[0]
-        self.AddList = list_of_changes[1]
-        self.DeleteList = list_of_changes[2]
+        self.preconditions = list_of_changes[0]
+        self.addList = list_of_changes[1]
+        self.deleteList = list_of_changes[2]
+
+    def __str__(self):
+        return "Action: %s\nParameters: %s\nPreconditions: %s\nAdd List: %s\nDelete List: %s" % (self.label,self.parameters,self.preconditions,self.addList,self.deleteList)
+
+    def execute_op(self, action_s, world_state):
+        '''This function takes a string containing the strips operator and a list of strings representing the world state. Then, it changes the world_state list according to its add and delete list. 
+
+    Keyword Arguments:
+    action_s -- A string containing the STRIPS operator and its associated parameters
+    world_state -- A list of strings containing the facts about the world at that moment.
+
+    Returns:
+    An updated world_state list.'''
+    
+        #We start with the full string. We're only interested in the variables passed to it.
+        #Called (Add (|y|)(|x|)(|z|)) with addList '(P |x| |y|)'
+        #       (Add (|b|)(|a|)(|c|))
+        #param_list = ['|b|','|a|']
+        param_list = get_exps(action_s[1:-1])
+        #addList = '(P |x| |y|)'
+        addList = '(' + " ".join(self.addList.construct_text_from_nodes()) + ')'
+        add_vars = self.addList.get_var_terms()
+        new_add_term = addList
+        #add_vars = ['|x|','|y|']
+        for variable in add_vars:
+            #replace_index = ['(|y|)','(|x|),'(|z|)'].index('|x|')
+            #replace_index = 1
+            replace_index = self.parameters.index(variable)
+            new_add_term = re.sub("\\" + self.parameters[replace_index][1:-2] + "\|", param_list[replace_index][1:-1], new_add_term)
+        #Add the term from the add list
+        world_state.append(new_add_term)
+
+        subtract_vars = self.deleteList.get_var_terms()
+        new_sub_term = '(' + " ".join(self.deleteList.construct_text_from_nodes()) + ')'
+        for variable in subtract_vars:
+            #replace_index = ['(|y|)','(|x|),'(|z|)'].index('|x|')
+            #replace_index = 1
+            replace_index = self.parameters.index(variable)
+            new_sub_term = re.sub("\\" + self.parameters[replace_index][1:-2] + "\|", param_list[replace_index][1:-1], new_sub_term)
+
+        sub_index = world_state.index(new_sub_term)
+        #Splice out the term from the remove list. 
+        world_state = world_state[:sub_index] + world_state[sub_index+1:]
+
+        return world_state   
+    
+class Predicate:
+    '''An object representing a predicate used in planning.'''
+    def __init__(self, label, name):
+        self.label = label
+        self.name = name
+        self.instances = []
+#TODO: Make sure I decide whether I need this or not.
+    def query_predicate(query_item):
+        '''Takes a string containing the variables from a lisp-readable
+predicate and returns True if an instance of the query_can be found
+in the predicate's list of statements in which it is true. E.g.
+P.query_predicate(" |x| |y|") will check if it has been told before that
+(P |x| |y|) is true.
+
+        Keyword Arguments:
+        query_item -- The string being checked for existence in the predicate's knowledge
+
+        Returns:
+        True if this instance of constants is found within the predicates knowledge, otherwise False.'''
+
+        no_ws_query = "".join(query_item.split())
 
 
 def tokenize_string(string):
@@ -49,7 +155,7 @@ def tokenize_string(string):
     right_paren = re.compile('\)')
     binary_ops = re.compile('AND|OR|EQUIV|IMPLIES')
     quantifier = re.compile('ALL|EXISTS')
-    const_term = re.compile('\|[a-e]\|')
+    const_term = re.compile('\|[a-ej]\|')
     func_term = re.compile('\|[f-h]\|')
     var_term = re.compile('\|[u-z]\|')
     unary_ops = re.compile('NOT')
@@ -405,7 +511,6 @@ list are well-formed based on how they were defined in wfp_checkerFOL and wfp_ch
     #grab parameters separately, then makek the list of props just the remaining terms.
     param_list = get_exps(list_of_props[0][1:-1])
     list_of_props = list_of_props[1:]
-
     #list_of_changes, if all the propositions are well-formed, will contain the Preconditions, Add List, and Delete List as 
     #lex_nodes that point to the tree for each item
     list_of_changes = []
@@ -415,14 +520,141 @@ list are well-formed based on how they were defined in wfp_checkerFOL and wfp_ch
             return 'nil'
         else:
             tokenized_s = tokenize_string(logical_prop[0])
-            lex_tree = construct_parse_tree(tokenized_s)
+            lex_tree = construct_parse_tree(tokenized_s, True)
             list_of_changes.append(lex_tree)
+        
     #The operator is well formed, create a StripsOp with it, add it to the dictionary and return t.
     new_op = StripsOp(operator_name, param_list, list_of_changes)
     operator_dictionary[operator_name] = new_op
 
     return 't'
 
-    
+def demonstrate_plan():
+    '''Reads from a text file which is lisp-readable, initializes the start
+and goal states, and shows a user defined plan. At each stage, from
+initialization to start, the input is tested for well-formedness.
 
-    
+    Keyword Arguments:
+    None
+
+    Returns:
+    None'''
+#Predicates: P - On(x,y)
+#            Q - At(x,y)
+#            R - CanLeaveTogether(x,y)
+#Constants:  |a| - cat
+#            |b| - rat
+#            |c| - grain
+#            |d| - left
+#            |e| - right
+#            |j| - boat
+#TODO: Figure out a way to have J be a part of add and delete lists without it being in parameter list. 
+    input_file = ""
+    with open("prog3_plan_demo.in") as f:
+        input_file = f.read()
+
+    parsed_file = get_exps(input_file)
+    world_state = []
+    goal_state = []
+
+    init_is_wf = True
+    goal_is_wf = True
+    actions_are_wf = True
+    #If either the initial state, the goal state, or the actions are not well-formed, the rest of the file is processed, but the plan is not walked through, only tested for well-formedness
+
+    for expression in parsed_file:
+        if expression[1:5] == 'init':
+           print('Initialization states: ' + expression)
+           print('Determining well-formedness of initialization states...')
+           init_exps = get_exps(expression[1:-1])
+           init_is_wf = are_exps_wf(init_exps, "Initialization")
+           world_state = init_exps
+           if init_is_wf:
+               print('Initialization states are well-formed.\n')
+   
+        if expression[1:5] == 'goal':
+            print('Goal states: ' + expression)
+            print('Determining well-formedness of goal states...')
+            goal_exps = get_exps(expression[1:-1])
+            goal_is_wf = are_exps_wf(goal_exps, "Goal")
+            goal_state = goal_exps
+            if goal_is_wf:
+                print('Goal states are well formed.\n')
+ 
+
+        if expression[1:8] == 'actions':
+            print('Determining well-formedness of STRIPS operators...')
+            for action in get_exps(expression[1:-1]):
+                if wf_op_check(action) == 'nil':
+                    actions_are_wf = False
+                    print(action)
+                    print('\n')
+                    print('Operators are not well-formed.\n')
+            if(actions_are_wf):
+                print('Operators are well-formed.\n')
+                    
+
+        if expression[1:5] == 'plan':
+            if not (actions_are_wf or goal_is_wf or init_is_wf):
+                print('Cannot run through the plan because either the goals, initializations, or actions are not well-formed.')
+                break
+
+
+            else:
+                print('Starting at a state of: ' + ",".join(world_state) + ' \nand a goal state of: ' + ",".join(goal_state) + "\n")
+                #Iterate through the actions in the plan, print them out
+                #and show the world state after each consecutive iteration
+                plan = get_exps(expression[1:-1])
+                for action in plan:
+                    print(action)
+                    print('')
+                    match = re.match('\(' + "(" + "|".join([key for key in operator_dictionary.keys()]) + ")", action)
+                    op_name = match.group(0)[1:]
+                    #Find the key to a matching operator in our dictionary of operators, then call execute_op on it. 
+                    for key in operator_dictionary.keys():
+                        if op_name == key:
+                           strips_op = operator_dictionary[op_name]
+                           world_state = strips_op.execute_op(action, world_state)
+                    print('New world state: ' + ",".join(world_state) + "\n")
+
+                reached_goal = True
+                for goal in goal_state:
+                    if not goal in world_state:
+                        reached_goal = False
+                        break  
+                print("Did we reach the goal state?")
+                print("World State: ")
+                print(world_state)
+                print("Goal state: ")
+                print(goal_state)
+                if(reached_goal):
+                    print("Yes!")
+                else:
+                    print("No")
+
+                    
+
+def are_exps_wf(list_of_exps, exp_type_s):
+    '''This function iterates over the list_of_exps and determines whether they are well-formed within the context of first order logic. If they are not, it prints to the console that they are not. This is similar to wfp_checkerFOL but is only meant to be used in demonstrate_plan to keep code readable
+
+    Keyword Arguments:
+    list_of_exps -- A list of strings to be evaluated for well-formedness
+    exp_type_s -- A string which indicates what kind of expressions are being tested, e.g. goal expressions, initialization expressions.
+
+    Returns:
+    True if completed, False if something is not well-formed'''
+
+    is_wf = True
+
+    for expression in list_of_exps:
+        #if any of the initialization expressions are not well-formed
+        #break and print that statements aren't well-formed.
+        if wfp_checkerFOL(expression) == 'nil':
+            print(expression)
+            print(exp_type_s + " statements are not well formed.")
+            is_wf = False
+
+    return is_wf
+   
+if __name__ == '__main__':
+    demonstrate_plan()
