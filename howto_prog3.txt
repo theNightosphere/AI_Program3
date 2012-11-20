@@ -1,0 +1,42 @@
+mp3_demo can be called in two ways. The quickest way is to call it from the command line. This was written using python 3.2.3, so it is important that the right version of python is used to run this. To run from the command line, type:
+
+(For unix)
+python3 mp3_demo.py mp3.in mp3.out
+(For windows)
+python mp3_demo.py mp3.in mp3.out
+
+This will read from the file mp3.in and record the output from test_a through test_c in mp3.out. Alternatively, you can opt not to include mp3.out. This will result in the output being printed to the console instead of any file. The most important part is just that the program is called in the format
+(your-call-to-python) mp3_demo.py (input-file) (optional-output-file)
+
+You can also run the program from a python interpreter in this fashion:
+
+>>>import mp3_demo
+>>>with open('mp3.in') as f:
+...    input_s = f.read()
+...    with open('mp3.out', 'w') as output:
+...        mp3_demo.parse_input(input_s, output)
+...
+>>>
+
+This will have the same effect as calling the program from the command line, except you have to open the files in python yourself. 
+
+
+To test part D, run prog3.py from the console in the same way as mp3_demo.py
+(Unix)
+python3 prog3.py
+(Windows)
+python prog3.py
+
+From the interpreter:
+>>>import prog3
+>>>prog3.demonstrate_plan()
+.(output)
+.(output)
+.(output)
+>>>
+
+
+I have already given a test input file. I tried to document the format of a well-formed operator, so you can change the source if you like. Just make sure that the new inputs follow exactly the same format I had before.
+
+On a unix machine, you can save the output in a file this way:
+python3 prog3.py > (name-of-your-output-file)
