@@ -20,6 +20,8 @@ the default None value)
     for exp in tests:
         if(exp[1:7] == 'part_a'):
             test_a(exp, output_file)
+        elif exp[1:8] == 'part_b_':
+            test_b_tautology(exp, output_file)
         elif exp[1:7] == 'part_b':
             test_b(exp, output_file)
         elif exp[1:7] == 'part_c':
@@ -70,12 +72,37 @@ If no file was specified, this value is simply None.
         result = prog3.TruthValue(truth_values,prop)
         if output_file is None:
             print('(part_b {} {})'.format(prop, result))
-            is_tautology = prog3.IsTautology(prop)
-            print('(IsTautology {} {})'.format(prop,is_tautology))
         else:
             output_file.write('(part_b {} {})\n'.format(prop, result))
+
+def test_b_tautology(string_b, output_file):
+    '''Extracts all the lisp-readable expressions passed as arguments in
+string_b then either prints it to the console, or writes it to the file
+object called output_file if it is not None.
+
+    Keyword Arguments:
+    string_b -- The lisp-readable string with the expressions to be tested
+based on whether or not they are tautologies.
+    output_file -- The file object to write the results of the test to.
+If no file was specified, this value is simply None.
+
+    Returns:
+    Nothing'''
+    #Get the expressions and values, then get the individual expressions to be evaluated by parsing the result of the first call to get_exps once more.
+    exps_and_vals = prog3.get_exps(string_b[1:-1])
+    test_exps = exps_and_vals[0]
+    expressions_b = prog3.get_exps(test_exps[1:-1])
+    if output_file is None:
+        print('\n')
+    else:
+        output_file.write('\n')
+    for prop in expressions_b:
+        if output_file is None:
             is_tautology = prog3.IsTautology(prop)
-            output_file.write('(IsTautology {} {})\n'.format(prop,is_tautology))
+            print('(part_b_tautology {} {})'.format(prop,is_tautology))
+        else:
+            is_tautology = prog3.IsTautology(prop)
+            output_file.write('(part_b_tautology {} {})\n'.format(prop,is_tautology))
 
 
 
