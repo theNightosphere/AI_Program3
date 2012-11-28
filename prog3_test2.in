@@ -1,0 +1,16 @@
+(part_a
+(AND (X)(12Z))(OR ("Robot")("Monkey"))(T1)(NOT (NOT (P)))(EQUIV (NOT (X))(NOT (Y)))(OR (p12)))
+
+(part_b
+
+(tests (OR (X)(Y))(EQUIV (NOT (AND (A)(B)))(OR (NOT (A))(NOT (B))))(IMPLIES (X)(Z))(OR (NOT (AND (X)(A)))(AND (Z)(B))))
+
+(valuation (A nil)(B t)(X t)(Y nil)(Z t)))
+
+(part_b_tautology
+
+(tests (OR (X)(Y))(EQUIV (NOT (AND (A)(B)))(OR (NOT (A))(NOT (B))))(IMPLIES (X)(Z))(OR (NOT (AND (X)(A)))(AND (Z)(B)))))
+
+(part_c
+
+(IMPLIES (NOT (OR (P |a|)(Q |b| )))(Q |c| ))(EXISTS |x|(AND (NOT (P |x| ))(Q |x| )))(ALL |y| (EQUIV (P |y| ) (NOT (OR (Q |y| )(S1 |y|))))))

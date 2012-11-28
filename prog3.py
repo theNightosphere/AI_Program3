@@ -114,29 +114,6 @@ class StripsOp:
         world_state = world_state[:sub_index] + world_state[sub_index+1:]
 
         return world_state   
-    
-class Predicate:
-    '''An object representing a predicate used in planning.'''
-    def __init__(self, label, name):
-        self.label = label
-        self.name = name
-        self.instances = []
-#TODO: Make sure I decide whether I need this or not.
-    def query_predicate(query_item):
-        '''Takes a string containing the variables from a lisp-readable
-predicate and returns True if an instance of the query_can be found
-in the predicate's list of statements in which it is true. E.g.
-P.query_predicate(" |x| |y|") will check if it has been told before that
-(P |x| |y|) is true.
-
-        Keyword Arguments:
-        query_item -- The string being checked for existence in the predicate's knowledge
-
-        Returns:
-        True if this instance of constants is found within the predicates knowledge, otherwise False.'''
-
-        no_ws_query = "".join(query_item.split())
-
 
 def tokenize_string(string):
     '''Takes a lisp-readable input, converts the string into tokens, and returns a double-ended queue of the tokens in the order they were found in the string
@@ -151,6 +128,7 @@ def tokenize_string(string):
     i = 0
 
     #Compile regular expression objects to be used when tokenizing input
+    #NOTE: In the original problem definition, |j| was not an acceptable input, but because I needed one extra constant for the planning portion, I made |j| acceptable. I hope this isn't a problem, but it was the only way I could think of to get one more constant
     left_paren = re.compile('\(')
     right_paren = re.compile('\)')
     binary_ops = re.compile('AND|OR|EQUIV|IMPLIES')
@@ -266,9 +244,6 @@ By default it does not build an AST based on first order logic, but by passing T
             #The operator, if one exists, is always the first term grabbed after a left parenthesis.The same goes for the capital-letter atoms
             #If a binary or unary op is found outside the first position, proposition is not well formed
             return None
-        #elif c_token.non_term == 'atom':
-            #The token is an atom
-            #current_node.children.append(LexNode(c_token, current_node))
         #Token is not a parenthesis or atom. If this tree is using FOL, then continue adding tokens, otherwise not well-formed and return None
         elif is_FOL_tree:
             current_node.children.append(LexNode(c_token,current_node))
@@ -368,7 +343,7 @@ def TruthValue(truth_val_s, wfp_s):
     True if the result of the evaluation is true, and false if the statement evaluates to false based on the truth values given.'''
 
     #Generates a list of strings containing the key value pairs for truth assignments
-    truth_list = re.findall('\([\w\s]+\)', truth_val_s[1:(len(truth_val_s)-1)])
+    truth_list = re.findall('\([\w\s]+\)', truth_val_s[1:-1])
 
     #Generates a dictionary of truth values mapped to their respective atoms
     truth_val_dict = {}
@@ -548,7 +523,7 @@ initialization to start, the input is tested for well-formedness.
 #            |d| - left
 #            |e| - right
 #            |j| - boat
-#TODO: Figure out a way to have J be a part of add and delete lists without it being in parameter list. 
+#IMPORTANT - In the original program specs |j| wasn't an acceptable value for FOL. I changed this so I could have one more constant.
     input_file = ""
     with open("prog3_plan_demo.in") as f:
         input_file = f.read()

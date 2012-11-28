@@ -1,0 +1,17 @@
+(part_a
+
+("This is well formed")(This is not)(X22)(x22)(AND (OR (X)(Z4))(Y))(HG4))
+
+(part_b
+
+(tests (IMPLIES (AND (IMPLIES (A)(B))(IMPLIES (B)(C)))(IMPLIES (A)(C)))(AND (NOT (A))(C))(NOT (NOT (NOT (A))))(OR (B)(NOT (B))))
+
+(valuation (A nil)(B t)(C nil)))
+
+(part_b_tautologies
+
+(tests (IMPLIES (AND (IMPLIES (A)(B))(IMPLIES (B)(C)))(IMPLIES (A)(C)))(AND (NOT (A))(C))(NOT (NOT (NOT (A))))(OR (B)(NOT (B)))))
+
+(part_c
+
+(|x| ALL |y|)(ALL |x|(P |x| ))(P |a| |e|)(NOT (NOT (NOT (P |a|))))(EQUIV (OR (X |x|)(Y |y|))(NOT (L |b|)))(|b| |x| |7|)(72 |x| )(P31 |a| |d|))

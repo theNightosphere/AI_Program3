@@ -1,0 +1,16 @@
+(part_a 
+(124)("HELLO")(PQR17)(NOT (NOT (P)))(AND (OR (Q17)(H))(NOT (NOT (P))))((P) OR (Q))(AND (HT)(X))(FUNCTION (Q12))(NOT (|p|))(AND (EQUIV (P)(Q))(OR (NOT (S))(NOT (NOT (T))))))
+
+(part_b
+
+(tests (EQUIV (IMPLIES (P)(Q))(OR (NOT (P))(Q)))(NOT (P))(OR (NOT (Q))(P))(AND (EQUIV (P)(Q))(OR (NOT (S))(NOT (NOT (T))))))
+
+(valuation (P t)(Q nil)(S nil)(T t)))
+
+(part_b_tautology
+
+(tests (EQUIV (IMPLIES (P)(Q))(OR (NOT (P))(Q)))(NOT (P))(OR (NOT (Q))(P))(AND (EQUIV (P)(Q))(OR (NOT (S))(NOT (NOT (T)))))))
+
+(part_c
+
+(ALL |x|(P |x|(AND (Q |x|)(S |x|))))(IMPLIES (NOT (AND (X |y|)(S22 |z|)))(P |x| |z|))(EXISTS |xy| (P |xy|))(ALL |v|(|b| X |y|)))
