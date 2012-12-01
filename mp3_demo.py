@@ -37,7 +37,7 @@ output is printed to the console
 
     Returns:
     Nothing.'''
-    expressions_a = prog3.get_exps(string_a[1:-1])
+    expressions_a = prog3.get_exps(prog3.remove_outer_parenthesis(string_a))
     for prop in expressions_a:
         is_wf = prog3.wfp_checker(prop)
         if output_file is None:
@@ -60,10 +60,10 @@ If no file was specified, this value is simply None.
     Returns:
     Nothing'''
     #Get the expressions and values, then get the individual expressions to be evaluated by parsing the result of the first call to get_exps once more.
-    exps_and_vals = prog3.get_exps(string_b[1:-1])
+    exps_and_vals = prog3.get_exps(prog3.remove_outer_parenthesis(string_b))
     test_exps = exps_and_vals[0]
     truth_values = exps_and_vals[1]
-    expressions_b = prog3.get_exps(test_exps[1:-1])
+    expressions_b = prog3.get_exps(prog3.remove_outer_parenthesis(test_exps))
     if output_file is None:
         print('\n')
     else:
@@ -89,9 +89,9 @@ If no file was specified, this value is simply None.
     Returns:
     Nothing'''
     #Get the expressions and values, then get the individual expressions to be evaluated by parsing the result of the first call to get_exps once more.
-    exps_and_vals = prog3.get_exps(string_b[1:-1])
+    exps_and_vals = prog3.get_exps(prog3.remove_outer_parenthesis(string_b))
     test_exps = exps_and_vals[0]
-    expressions_b = prog3.get_exps(test_exps[1:-1])
+    expressions_b = prog3.get_exps(prog3.remove_outer_parenthesis(test_exps))
     if output_file is None:
         print('\n')
     else:
@@ -120,7 +120,7 @@ If no file was specified, this value is simply None.
     Returns:
     Nothing'''
 
-    expressions_c = prog3.get_exps(string_c[1:-1])
+    expressions_c = prog3.get_exps(prog3.remove_outer_parenthesis(string_c))
     if output_file is None:
         print('\n')
     else:

@@ -3,27 +3,36 @@ import re
 from collections import deque
 import string
 
-operator_dictionary = {}
+operator_dictionary = dict()
 
-class PToken:
+class PToken(object):
     '''Token class used to represent each meaningful set of characters when a string is broken up into parts that must be parsed.'''
     def __init__(self, non_term, val, loc):
         self.non_term = non_term
         self.val = val
         self.loc = loc
 
+    def __str__(self):
+        return '<PToken> Non Terminal %s\nValue: %s\n' % (self.non_term, self.val)
+
+    def __repr__(self):
+        return 'PToken(%s,%s,%d)' % (self.non_term, self.val, self.loc) 
+
     
-class LexNode:
+class LexNode(object):
     '''A node for the parse tree that is generated to determine the truth of well-formed propositions.'''
     def __init__(self, token, parent = None):
         self.non_term = token.non_term
         self.val = token.val
         self.loc = token.loc
         self.parent = parent
-        self.children = []
+        self.children = list()
 
     def __str__(self):
-        return "Non Terminal: %s\nValue: %s\n" % (self.non_term,self.val)
+        return self.val
+
+    def __repr__(self):
+        return "LexNode(%s,%s,%d,parent = %s)" % (self.non_term,self.val,self.loc, self.parent.val)
 
 
     def construct_text_from_nodes(self):
@@ -35,7 +44,7 @@ and concatenating the values at each node.
 
     Returns:
     A list of characters representating of the lex_tree starting at the node which originally called construct_text_from_nodes. Should be called with join()'''
-        my_val = []
+        my_val = list()
         if self.non_term != 'start':
             my_val = [self.val]
 
@@ -52,7 +61,7 @@ and concatenating the values at each node.
     Returns:
     A list of strings which are the values of the FOL constants, variables, and functions found in the tree.'''
 
-        my_value = []
+        my_value = list()
         if self.non_term in ['const','function','variable']:
             my_value = ['(' + self.val + ')']
         for child in self.children:
@@ -60,7 +69,7 @@ and concatenating the values at each node.
 
         return my_value
 
-class StripsOp:
+class StripsOp(object):
     '''Node representing a STRIPS operator which contains its label, its parameters, its preconditions, add list, and delete list'''
 
     def __init__(self, label, parameters, list_of_changes):
@@ -72,6 +81,9 @@ class StripsOp:
 
     def __str__(self):
         return "Action: %s\nParameters: %s\nPreconditions: %s\nAdd List: %s\nDelete List: %s" % (self.label,self.parameters,self.preconditions,self.addList,self.deleteList)
+
+    def __repr__(self):
+        return "StripsOp(%s,%s,[%s,%s,%s])" % (self.label, self.parameters, self.preconditions.construct_text_from_nodes(), self.addList.construct_text_from_nodes(), self.deleteList.construct_text_from_nodes())
 
     def execute_op(self, action_s, world_state):
         '''This function takes a string containing the strips operator and a list of strings representing the world state. Then, it changes the world_state list according to its add and delete list. 
@@ -87,31 +99,23 @@ class StripsOp:
         #Called (Add (|y|)(|x|)(|z|)) with addList '(P |x| |y|)'
         #       (Add (|b|)(|a|)(|c|))
         #param_list = ['|b|','|a|']
-        param_list = get_exps(action_s[1:-1])
+        param_list = get_exps(remove_outer_parenthesis(action_s))
         #addList = '(P |x| |y|)'
-        addList = '(' + " ".join(self.addList.construct_text_from_nodes()) + ')'
-        add_vars = self.addList.get_var_terms()
-        new_add_term = addList
-        #add_vars = ['|x|','|y|']
-        for variable in add_vars:
-            #replace_index = ['(|y|)','(|x|),'(|z|)'].index('|x|')
-            #replace_index = 1
-            replace_index = self.parameters.index(variable)
-            new_add_term = re.sub("\\" + self.parameters[replace_index][1:-2] + "\|", param_list[replace_index][1:-1], new_add_term)
+        new_add_term = '(' + " ".join(self.addList.construct_text_from_nodes()) + ')'
+
+        #add_vars = ['|x|','|y|'], param_list = ['|a|', '|b|'] -> zip -> [('|x|','|a|'),('|y|','|b|')]
+        for param,replacement in zip(self.parameters,param_list):
+            new_add_term = re.sub("\\" + param[1:-2] + "\|", replacement[1:-1], new_add_term)
         #Add the term from the add list
         world_state.append(new_add_term)
-
-        subtract_vars = self.deleteList.get_var_terms()
+        
         new_sub_term = '(' + " ".join(self.deleteList.construct_text_from_nodes()) + ')'
-        for variable in subtract_vars:
-            #replace_index = ['(|y|)','(|x|),'(|z|)'].index('|x|')
-            #replace_index = 1
-            replace_index = self.parameters.index(variable)
-            new_sub_term = re.sub("\\" + self.parameters[replace_index][1:-2] + "\|", param_list[replace_index][1:-1], new_sub_term)
 
-        sub_index = world_state.index(new_sub_term)
-        #Splice out the term from the remove list. 
-        world_state = world_state[:sub_index] + world_state[sub_index+1:]
+        for param,replacement in zip(self.parameters, param_list):
+            new_sub_term = re.sub("\\" + param[1:-2] + "\|", replacement[1:-1], new_sub_term)
+
+        #Remove the delete list term from the world state. 
+        world_state.remove(new_sub_term)
 
         return world_state   
 
@@ -283,7 +287,7 @@ def isFOLProposition(token):
     Returns:
     A boolean value, true if the token is part of first order logic, false if it is not.'''
     
-    return (token.non_term == 'quantifier') or (token.non_term == 'const') or (token.non_term == 'variable') or (token.non_term == 'function')
+    return token.non_term in ['quantifier','const','variable','function']
 
 def isOperator(token):
     '''Takes a token and tests its non_term field to determine wheter or not it as a binary or unary operator.
@@ -293,7 +297,7 @@ def isOperator(token):
 
     Returns:
     A boolean value, true if the token is an operator, false if it is not.'''
-    return (token.non_term == 'unaryop') or (token.non_term == 'binary_op')
+    return token.non_term in ['unaryop','binary_op']
 
 
 def evaluate_tree(abstract_tree, truth_vals):
@@ -346,7 +350,7 @@ def TruthValue(truth_val_s, wfp_s):
     truth_list = re.findall('\([\w\s]+\)', truth_val_s[1:-1])
 
     #Generates a dictionary of truth values mapped to their respective atoms
-    truth_val_dict = {}
+    truth_val_dict = dict()
     for pair in truth_list:
         atom = re.search('\w+(?=\s)', pair).group(0)
         value = re.search('(?<=\s)\w+', pair).group(0)
@@ -379,7 +383,7 @@ def IsTautology(wfp_s):
     tokenized_input = tokenize_string(wfp_s)
 
     #Creates a list of the atoms in the proposition with no duplicates
-    symbol_list = []
+    symbol_list = list()
     for token in tokenized_input:
         if token.non_term == 'atom' and (not token.val in symbol_list):
             symbol_list.append(token.val)
@@ -387,7 +391,7 @@ def IsTautology(wfp_s):
     lex_tree = construct_parse_tree(tokenized_input)
 
     #Dictionary for mapping truth value to atoms
-    val_dict = {}
+    val_dict = dict()
     for i in range(2 ** len(symbol_list)):
         for j in range(len(symbol_list)):
             #If the jth bit of i is a 1, set corresponding atom to true
@@ -434,26 +438,26 @@ sliced and appended to the final list of expressions.
     Returns:
     list_exps -- A list of strings containing all the valid lisp expressions found within the input string'''
 
-    paren_stack = []
-    list_exps = []
+    paren_stack = list()
+    list_exps = list()
     start_i = 0
     end_i = 0
-    for i in range(len(string_to_parse)):
-        if not string_to_parse[i] in string.whitespace:
+    for index,character in enumerate(string_to_parse):
+        if not character in string.whitespace:
             if not '(' in paren_stack:
-                start_i = i
+                start_i = index
             #Found a right parenthesis, pop until you get a left parenthesis. If the stack is now empty, the right parenthesis was the end of a term.The next term will begin 1 spot later
-            if string_to_parse[i] == ')':
+            if character == ')':
                 top = paren_stack.pop()
                 while(top != '(' and len(paren_stack) > 0):
                     top = paren_stack.pop()
                 #if the stack has no left parenthesis in it, we've popped off a full term
                 if not '(' in paren_stack:
-                    end_i = i+1
+                    end_i = index+1
                     list_exps.append(string_to_parse[start_i:end_i])
             #Not a right parenthesis or the beginning of a term. Append as usual.
             else:
-                paren_stack.append(string_to_parse[i])
+                paren_stack.append(character)
     return list_exps
 
 
@@ -480,17 +484,17 @@ list are well-formed based on how they were defined in wfp_checkerFOL and wfp_ch
         return 'nil'
 
     #get parameters, preconditions, add list, and delete list IN THAT ORDER. If they are formatted wrong or out of order, return nil.
-    list_of_props = get_exps(input_s[1:-1])
+    list_of_props = get_exps(remove_outer_parenthesis(input_s))
     if (list_of_props[0][1:6] != 'Param')or (list_of_props[1][1:7] != 'Precon') or (list_of_props[2][1:8] != 'AddList') or (list_of_props[3][1:8] != 'DelList'):
         return 'nil'
     #grab parameters separately, then makek the list of props just the remaining terms.
-    param_list = get_exps(list_of_props[0][1:-1])
+    param_list = get_exps(remove_outer_parenthesis(list_of_props[0]))
     list_of_props = list_of_props[1:]
     #list_of_changes, if all the propositions are well-formed, will contain the Preconditions, Add List, and Delete List as 
     #lex_nodes that point to the tree for each item
-    list_of_changes = []
+    list_of_changes = list()
     for item in list_of_props:
-        logical_prop = get_exps(item[1:-1])
+        logical_prop = get_exps(remove_outer_parenthesis(item))
         if wfp_checkerFOL(logical_prop[0]) == 'nil':
             return 'nil'
         else:
@@ -529,19 +533,17 @@ initialization to start, the input is tested for well-formedness.
         input_file = f.read()
 
     parsed_file = get_exps(input_file)
-    world_state = []
-    goal_state = []
+    world_state = list()
+    goal_state = list()
 
-    init_is_wf = True
-    goal_is_wf = True
-    actions_are_wf = True
+    init_is_wf = goal_is_wf = actions_are_wf = True
     #If either the initial state, the goal state, or the actions are not well-formed, the rest of the file is processed, but the plan is not walked through, only tested for well-formedness
 
     for expression in parsed_file:
         if expression[1:5] == 'init':
            print('Initialization states: ' + expression)
            print('Determining well-formedness of initialization states...')
-           init_exps = get_exps(expression[1:-1])
+           init_exps = get_exps(remove_outer_parenthesis(expression))
            init_is_wf = are_exps_wf(init_exps, "Initialization")
            world_state = init_exps
            if init_is_wf:
@@ -550,7 +552,7 @@ initialization to start, the input is tested for well-formedness.
         if expression[1:5] == 'goal':
             print('Goal states: ' + expression)
             print('Determining well-formedness of goal states...')
-            goal_exps = get_exps(expression[1:-1])
+            goal_exps = get_exps(remove_outer_parenthesis(expression))
             goal_is_wf = are_exps_wf(goal_exps, "Goal")
             goal_state = goal_exps
             if goal_is_wf:
@@ -559,7 +561,7 @@ initialization to start, the input is tested for well-formedness.
 
         if expression[1:8] == 'actions':
             print('Determining well-formedness of STRIPS operators...')
-            for action in get_exps(expression[1:-1]):
+            for action in get_exps(remove_outer_parenthesis(expression)):
                 if wf_op_check(action) == 'nil':
                     actions_are_wf = False
                     print(action)
@@ -574,12 +576,11 @@ initialization to start, the input is tested for well-formedness.
                 print('Cannot run through the plan because either the goals, initializations, or actions are not well-formed.')
                 break
 
-
             else:
                 print('Starting at a state of: ' + ",".join(world_state) + ' \nand a goal state of: ' + ",".join(goal_state) + "\n")
                 #Iterate through the actions in the plan, print them out
                 #and show the world state after each consecutive iteration
-                plan = get_exps(expression[1:-1])
+                plan = get_exps(remove_outer_parenthesis(expression))
                 for action in plan:
                     print(action)
                     print('')
@@ -631,5 +632,17 @@ def are_exps_wf(list_of_exps, exp_type_s):
 
     return is_wf
    
+def remove_outer_parenthesis(string_to_edit):
+    '''As the name implies, this function removes parenthesis from a string. More specifically, it removes the parenthesis from first
+and last position of the string. This occurs so often in this program that it was worth turning into a function simply to increase readability of code.
+
+    Keyword Arguments:
+    string_to_edit -- A string with '(' in the first position and ')' in the last
+    
+    Returns:
+    A string sliced to get rid of the first and last characters.'''
+
+    return string_to_edit[1:-1]
+
 if __name__ == '__main__':
     demonstrate_plan()
