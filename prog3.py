@@ -349,15 +349,8 @@ def TruthValue(truth_val_s, wfp_s):
     #Generates a list of strings containing the key value pairs for truth assignments
     truth_list = re.findall('\([\w\s]+\)', truth_val_s[1:-1])
 
-    #Generates a dictionary of truth values mapped to their respective atoms
-    truth_val_dict = dict()
-    for pair in truth_list:
-        atom = re.search('\w+(?=\s)', pair).group(0)
-        value = re.search('(?<=\s)\w+', pair).group(0)
-        if value == 't':
-            truth_val_dict[atom] = True
-        else:
-            truth_val_dict[atom] = False
+    #Generates a dictionary of truth values mapped to their respective atom. If the provided value is 't', then its value is True, else it is False.
+    truth_val_dict = {re.search('\w+(?=\s)', pair).group(0): re.search('(?<=\s)\w+', pair).group(0) == 't' for pair in truth_list }
     
     #Tokenize the proposition and turn it into a parse-able tree.
     tokenized_prop = tokenize_string(wfp_s)
@@ -383,10 +376,7 @@ def IsTautology(wfp_s):
     tokenized_input = tokenize_string(wfp_s)
 
     #Creates a list of the atoms in the proposition with no duplicates
-    symbol_list = list()
-    for token in tokenized_input:
-        if token.non_term == 'atom' and (not token.val in symbol_list):
-            symbol_list.append(token.val)
+    symbol_list = [token.val for token in tokenized_input if (token.non_term == 'atom' and (not token.val in symbol_list))]
 
     lex_tree = construct_parse_tree(tokenized_input)
 
